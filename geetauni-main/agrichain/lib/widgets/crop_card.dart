@@ -101,15 +101,23 @@ class _CropCardState extends State<CropCard>
                       left: 12,
                       child: Row(
                         children: [
-                          if (widget.crop.sellingMethod == 'fpo' && widget.crop.fpoName != null && widget.crop.fpoName!.isNotEmpty)
+                          if (widget.crop.sellingMethod == 'fpo')
                             _buildGlassBadge(
                               context,
-                              'FPO Verified',
-                              Icons.verified_user,
+                              widget.crop.fpoName != null && widget.crop.fpoName!.isNotEmpty
+                                  ? 'FPO: ${widget.crop.fpoName}'
+                                  : 'Through FPO',
+                              Icons.apartment,
+                              const Color(0xFF10B981),
+                            )
+                          else
+                            _buildGlassBadge(
+                              context,
+                              'Farmer Direct',
+                              Icons.person_pin_circle,
                               const Color(0xFF10B981),
                             ),
-                          if (widget.crop.sellingMethod == 'fpo' && widget.crop.isNFT)
-                            const SizedBox(width: 6),
+                          const SizedBox(width: 6),
                           if (widget.crop.isNFT)
                             _buildGlassBadge(
                               context,
@@ -195,25 +203,46 @@ class _CropCardState extends State<CropCard>
                               ),
                             ],
                           ),
-                          if (widget.crop.sellingMethod == 'fpo' &&
-                              widget.crop.fpoName != null &&
-                              widget.crop.fpoName!.isNotEmpty) ...[
-                            const SizedBox(height: 3),
-                            Row(
+                          // Channel & Selling Method Tag (Farmer Direct vs Through FPO)
+                          Container(
+                            margin: const EdgeInsets.only(top: 4, bottom: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: (widget.crop.sellingMethod == 'fpo')
+                                  ? const Color(0xFFEFF6FF)
+                                  : const Color(0xFFF0FDF4),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                color: (widget.crop.sellingMethod == 'fpo')
+                                    ? const Color(0xFFBFDBFE)
+                                    : const Color(0xFFBBF7D0),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.apartment,
-                                  size: 13,
-                                  color: Color(0xFF107C41),
+                                Icon(
+                                  (widget.crop.sellingMethod == 'fpo')
+                                      ? Icons.apartment_rounded
+                                      : Icons.person_pin_circle_rounded,
+                                  size: 11,
+                                  color: (widget.crop.sellingMethod == 'fpo')
+                                      ? const Color(0xFF2563EB)
+                                      : const Color(0xFF16A34A),
                                 ),
-                                const SizedBox(width: 3),
+                                const SizedBox(width: 4),
                                 Expanded(
                                   child: Text(
-                                    widget.crop.fpoName!,
-                                    style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.w600,
-                                      color: Color(0xFF107C41),
+                                    (widget.crop.sellingMethod == 'fpo')
+                                        ? 'Through FPO: ${widget.crop.fpoName?.isNotEmpty == true ? widget.crop.fpoName : "Cooperative"}'
+                                        : 'Farmer Direct: ${widget.crop.farmerName.isNotEmpty ? widget.crop.farmerName : "Farm Gate"}',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w700,
+                                      color: (widget.crop.sellingMethod == 'fpo')
+                                          ? const Color(0xFF1E40AF)
+                                          : const Color(0xFF15803D),
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -221,7 +250,7 @@ class _CropCardState extends State<CropCard>
                                 ),
                               ],
                             ),
-                          ],
+                          ),
                         ],
                       ),
 
@@ -519,6 +548,8 @@ class _CropCardState extends State<CropCard>
               widget.crop.fpoId!.isNotEmpty)
           ? widget.crop.fpoId!
           : widget.crop.farmerId,
+      farmerName: widget.crop.farmerName,
+      sellingMethod: widget.crop.sellingMethod,
       inventoryItemId: widget.crop.id,
       isBuyer: true,
       isRetail: isRetail,

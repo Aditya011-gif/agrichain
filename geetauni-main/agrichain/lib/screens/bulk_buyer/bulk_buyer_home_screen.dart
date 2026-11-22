@@ -8,6 +8,7 @@ import '../../services/fpo_inventory_service.dart';
 import '../../services/multi_fpo_cluster_service.dart';
 import '../../models/fpo_inventory_model.dart';
 import '../../models/multi_fpo_cluster_model.dart';
+import '../../models/firestore_models.dart';
 import '../../utils/crop_image_helper.dart';
 import '../../utils/translation_helper.dart';
 import '../../widgets/language_switcher.dart';
@@ -243,6 +244,16 @@ class _BulkBuyerHomeScreenState extends State<BulkBuyerHomeScreen> {
                       ),
                       const SizedBox(height: 12),
                       _buildWholesaleLotsCarousel(filteredLots),
+                      const SizedBox(height: 24),
+
+                      // 4b. Farmer & FPO Crop Listings Carousel (Direct Farm-Gate & Through FPO)
+                      _buildSectionHeader(
+                        title: context.tr('Farmer & FPO Crop Listings 🌾', 'किसान एवं एफपीओ फसल लिस्टिंग 🌾'),
+                        subtitle: context.tr('Direct farm-gate lots & FPO-consigned supply ready for bulk purchase', 'थोक खरीद हेतु उपलब्ध प्रत्यक्ष किसान व एफपीओ लॉट'),
+                        onSeeAll: () => widget.onNavigateTab?.call(1),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildFarmerListingsSection(),
                       const SizedBox(height: 24),
 
                       // 5. Hyperlocal 7-10 km Sourcing Clusters (Generated dynamically by MultiFpoClusterEngine)
@@ -1710,6 +1721,392 @@ class _BulkBuyerHomeScreenState extends State<BulkBuyerHomeScreen> {
       inventoryItemId: lot.listingId,
       isBuyer: true,
       isRetail: false,
+      sellingMethod: lot.sellingMethod,
+      farmerName: lot.farmerName,
+    );
+  }
+
+  Widget _buildFarmerListingsSection() {
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: _dbService.streamAllAvailableCrops(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(color: AppTheme.primaryGreen),
+            ),
+          );
+        }
+
+        final rawDocs = snapshot.data ?? [];
+        final allCrops = rawDocs
+            .map((d) => FirestoreCrop.fromMap(d, d['id']?.toString()))
+            .toList();
+
+        // Filter by category and search
+        final filteredCrops = allCrops.where((crop) {
+          // Category match
+          if (_selectedCategory != 'All') {
+            final name = crop.name.toLowerCase();
+            final variety = (crop.variety ?? '').toLowerCase();
+            final selected = _selectedCategory.toLowerCase();
+            if (selected.contains('wheat') && name.contains('wheat')) {
+              // match
+            } else if (selected.contains('rice') && (name.contains('rice') || name.contains('paddy'))) {
+              // match
+            } else if (selected.contains('mustard') && (name.contains('mustard') || name.contains('oilseed'))) {
+              // match
+            } else if (selected.contains('maize') && (name.contains('maize') || name.contains('corn'))) {
+              // match
+            } else if (selected.contains('pulses') && (name.contains('pulse') || name.contains('dal') || name.contains('gram'))) {
+              // match
+            } else if (selected.contains('cotton') && name.contains('cotton')) {
+              // match
+            } else if (selected.contains('spices') && (name.contains('spice') || name.contains('chilli') || name.contains('turmeric'))) {
+              // match
+            } else if (!name.contains(selected) && !variety.contains(selected)) {
+              return false;
+            }
+          }
+
+          // Search query
+          if (_searchQuery.isNotEmpty) {
+            final q = _searchQuery.toLowerCase();
+            final matches = crop.name.toLowerCase().contains(q) ||
+                crop.farmerName.toLowerCase().contains(q) ||
+                crop.location.toLowerCase().contains(q) ||
+                (crop.fpoName?.toLowerCase().contains(q) ?? false);
+            if (!matches) return false;
+          }
+
+          return true;
+        }).toList();
+
+        if (filteredCrops.isEmpty) {
+          return Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                Icon(Icons.agriculture_outlined, size: 36, color: Colors.grey.shade400),
+                const SizedBox(height: 8),
+                Text(
+                  context.tr('No Farmer Crop Listings Found', 'कोई किसान फसल लिस्टिंग उपलब्ध नहीं'),
+                  style: GoogleFonts.inter(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.darkGreen),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  context.tr(
+                    'No farmer listings match the selected category. Browse the full catalog in Supply tab or create an RFQ.',
+                    'चयनित श्रेणी से मेल खाती कोई फसल उपलब्ध नहीं है। आपूर्ति टैब में पूरा कैटलॉग देखें।',
+                  ),
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.inter(fontSize: 11, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return SizedBox(
+          height: 300,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: filteredCrops.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            itemBuilder: (context, index) {
+              final crop = filteredCrops[index];
+              final isDirect = (crop.sellingMethod.isEmpty ? 'direct' : crop.sellingMethod).toLowerCase() == 'direct';
+              final fpoName = crop.fpoName?.isNotEmpty == true ? crop.fpoName! : 'Local FPO';
+
+              double pricePerQtl = crop.price;
+              if (pricePerQtl > 0 && pricePerQtl < 150) {
+                pricePerQtl = pricePerQtl * 100;
+              }
+
+              double qtyQtl = 50.0;
+              final qtyStr = crop.quantity.toLowerCase();
+              final parsedNum = double.tryParse(crop.quantity.replaceAll(RegExp(r'[^0-9.]'), ''));
+              if (parsedNum != null && parsedNum > 0) {
+                if (qtyStr.contains('ton') || qtyStr.contains('mt')) {
+                  qtyQtl = parsedNum * 10;
+                } else if (qtyStr.contains('kg')) {
+                  qtyQtl = parsedNum / 100;
+                } else {
+                  qtyQtl = parsedNum;
+                }
+              }
+
+              return InkWell(
+                onTap: () => _showFarmerCropDetailsModal(context, crop),
+                borderRadius: BorderRadius.circular(16),
+                child: Container(
+                  width: 275,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: isDirect ? const Color(0xFFBBF7D0) : const Color(0xFFBFDBFE),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: CropImageHelper.buildCropImage(
+                              crop.imageUrl,
+                              crop.name,
+                              height: 105,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                          // Channel Tag (Direct vs FPO)
+                          Positioned(
+                            top: 6,
+                            left: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: isDirect ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
+                                borderRadius: BorderRadius.circular(6),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.25),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    isDirect ? Icons.person_pin_circle : Icons.corporate_fare,
+                                    size: 11,
+                                    color: Colors.white,
+                                  ),
+                                  const SizedBox(width: 3),
+                                  Text(
+                                    isDirect
+                                        ? context.tr('Farmer Direct', 'किसान प्रत्यक्ष')
+                                        : context.tr('Via FPO: $fpoName', 'एफपीओ: $fpoName'),
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9.5,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          // Quality Tag
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.7),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                crop.qualityGrade.name.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${crop.name}${crop.variety != null && crop.variety!.isNotEmpty ? " • ${crop.variety}" : ""}',
+                        style: GoogleFonts.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.darkGreen,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          Text(
+                            '₹${pricePerQtl.toStringAsFixed(0)} ${context.tr('/ Qtl', '/ क्विंटल')}',
+                            style: GoogleFonts.inter(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: isDirect ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            '${qtyQtl.toStringAsFixed(0)} ${context.tr('Qtl avail', 'क्विंटल उपलब्ध')}',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.grey.shade700,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+
+                      // Prominent Selling Channel Description Callout
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: isDirect ? const Color(0xFFF0FDF4) : const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isDirect ? const Color(0xFF86EFAC) : const Color(0xFF93C5FD),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(
+                              isDirect ? Icons.storefront_outlined : Icons.corporate_fare_outlined,
+                              size: 13,
+                              color: isDirect ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
+                            ),
+                            const SizedBox(width: 5),
+                            Expanded(
+                              child: Text(
+                                isDirect
+                                    ? context.tr(
+                                        'Direct from Farmer (${crop.farmerName.isNotEmpty ? crop.farmerName : "Farm-Gate"}) • Zero Brokerage',
+                                        'सीधे किसान (${crop.farmerName.isNotEmpty ? crop.farmerName : "खेत"}) से • 0% दलाली',
+                                      )
+                                    : context.tr(
+                                        'Consigned via $fpoName • Assayed & Standardized',
+                                        '$fpoName के माध्यम से • गुणवत्ता जांच व तुलाई',
+                                      ),
+                                style: GoogleFonts.inter(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                  color: isDirect ? const Color(0xFF166534) : const Color(0xFF1E40AF),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Spacer(),
+
+                      // Footer Row with Location and Action Button
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_outlined, size: 12, color: Colors.grey),
+                          const SizedBox(width: 3),
+                          Expanded(
+                            child: Text(
+                              crop.location.isNotEmpty ? crop.location : 'Haryana',
+                              style: GoogleFonts.inter(fontSize: 10, color: Colors.grey.shade700),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () => _showFarmerCropDetailsModal(context, crop),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: isDirect ? const Color(0xFF15803D) : const Color(0xFF1D4ED8),
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                context.tr('Inspect / Buy', 'जांचें / खरीदें'),
+                                style: GoogleFonts.inter(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _showFarmerCropDetailsModal(BuildContext context, FirestoreCrop crop) {
+    double qtyQtl = 50.0;
+    final qtyStr = crop.quantity.toLowerCase();
+    final parsedNum = double.tryParse(crop.quantity.replaceAll(RegExp(r'[^0-9.]'), ''));
+    if (parsedNum != null && parsedNum > 0) {
+      if (qtyStr.contains('ton') || qtyStr.contains('mt')) {
+        qtyQtl = parsedNum * 10;
+      } else if (qtyStr.contains('kg')) {
+        qtyQtl = parsedNum / 100;
+      } else {
+        qtyQtl = parsedNum;
+      }
+    }
+
+    double pricePerQtl = crop.price;
+    if (pricePerQtl > 0 && pricePerQtl < 150) {
+      pricePerQtl = pricePerQtl * 100;
+    }
+    final pricePerMt = pricePerQtl * 10.0;
+    final availableMt = qtyQtl / 10.0;
+
+    final isDirect = (crop.sellingMethod.isEmpty ? 'direct' : crop.sellingMethod).toLowerCase() == 'direct';
+    final fpoName = crop.fpoName?.isNotEmpty == true ? crop.fpoName! : 'Local Cooperative FPO';
+
+    FpoLotDetailsModal.show(
+      context,
+      cropName: crop.name,
+      variety: crop.variety ?? 'Standard Variety',
+      siloLocation: isDirect
+          ? '${crop.location} • Farm Gate Direct'
+          : '${crop.location} • $fpoName',
+      totalMt: (availableMt * 1.25).clamp(availableMt, 2000.0),
+      availableMt: availableMt,
+      reservedMt: 0.0,
+      pricePerQtl: pricePerQtl,
+      pricePerMt: pricePerMt,
+      qualityGrade: crop.qualityGrade.name.toUpperCase(),
+      moistureText: '11.8% (Assayed Optimal)',
+      imageUrl: crop.imageUrl,
+      fpoName: isDirect ? 'Farmer Direct (${crop.farmerName})' : fpoName,
+      fpoId: crop.fpoId,
+      inventoryItemId: crop.id,
+      isBuyer: true,
+      isRetail: false,
+      sellingMethod: crop.sellingMethod,
+      farmerName: crop.farmerName,
     );
   }
 }

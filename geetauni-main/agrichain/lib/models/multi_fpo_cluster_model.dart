@@ -1,4 +1,3 @@
-import 'dart:math' as math;
 import 'package:latlong2/latlong.dart';
 
 /// Represents a single FPO warehouse node participating in a multi-FPO aggregation cluster.
@@ -18,6 +17,8 @@ class FpoNode {
   final String? listingId;
   final int dispatchLeadDays;
   final bool isMultiFpoEligible;
+  final String sellingMethod; // 'direct' or 'fpo'
+  final String? farmerName;
 
   const FpoNode({
     required this.fpoId,
@@ -35,6 +36,8 @@ class FpoNode {
     this.listingId,
     this.dispatchLeadDays = 2,
     this.isMultiFpoEligible = true,
+    this.sellingMethod = 'fpo',
+    this.farmerName,
   });
 
   LatLng get position => LatLng(latitude, longitude);

@@ -167,6 +167,7 @@ class FirestoreUser {
 class FirestoreCrop {
   final String id;
   final String name;
+  final String? variety;
   final String farmerId;
   final String farmerName;
   final String location;
@@ -221,6 +222,7 @@ class FirestoreCrop {
   FirestoreCrop({
     required this.id,
     required this.name,
+    this.variety,
     required this.farmerId,
     required this.farmerName,
     required this.location,
@@ -269,6 +271,7 @@ class FirestoreCrop {
     return {
       'id': id,
       'name': name,
+      'variety': variety,
       'farmerId': farmerId,
       'farmerName': farmerName,
       'location': location,
@@ -321,6 +324,7 @@ class FirestoreCrop {
     return FirestoreCrop(
       id: doc.id,
       name: data['name'] ?? '',
+      variety: data['variety'] as String?,
       farmerId: data['farmerId'] ?? '',
       farmerName: data['farmerName'] ?? '',
       location: data['location'] ?? '',
@@ -383,6 +387,98 @@ class FirestoreCrop {
       isPreHarvest: data['isPreHarvest'] as bool? ?? false,
       daysToHarvest: (data['daysToHarvest'] as num?)?.toInt(),
       estimatedHarvestDate: data['estimatedHarvestDate'] != null ? (data['estimatedHarvestDate'] as Timestamp).toDate() : null,
+      cropGrowthStage: data['cropGrowthStage'] as String?,
+      preBookingAdvancePct: (data['preBookingAdvancePct'] as num?)?.toDouble(),
+    );
+  }
+
+  factory FirestoreCrop.fromMap(Map<String, dynamic> data, [String? docId]) {
+    DateTime harvestDt;
+    if (data['harvestDate'] is Timestamp) {
+      harvestDt = (data['harvestDate'] as Timestamp).toDate();
+    } else if (data['harvestDate'] is String) {
+      harvestDt = DateTime.tryParse(data['harvestDate']) ?? DateTime.now();
+    } else {
+      harvestDt = DateTime.now();
+    }
+
+    DateTime createdDt;
+    if (data['createdAt'] is Timestamp) {
+      createdDt = (data['createdAt'] as Timestamp).toDate();
+    } else if (data['createdAt'] is String) {
+      createdDt = DateTime.tryParse(data['createdAt']) ?? DateTime.now();
+    } else {
+      createdDt = DateTime.now();
+    }
+
+    return FirestoreCrop(
+      id: docId ?? data['id']?.toString() ?? '',
+      name: data['name'] ?? data['cropName'] ?? '',
+      variety: data['variety']?.toString(),
+      farmerId: data['farmerId'] ?? '',
+      farmerName: data['farmerName'] ?? '',
+      location: data['location'] ?? '',
+      price: (data['price'] is num)
+          ? (data['price'] as num).toDouble()
+          : (double.tryParse(data['price']?.toString() ?? '0') ?? 0.0),
+      quantity: data['quantity']?.toString() ?? data['availableQuantity']?.toString() ?? '',
+      harvestDate: harvestDt,
+      imageUrl: data['imageUrl'] ?? '',
+      description: data['description'] ?? '',
+      nameHi: data['nameHi'] as String?,
+      descriptionHi: data['descriptionHi'] as String?,
+      isNFT: data['isNFT'] ?? false,
+      nftTokenId: data['nftTokenId']?.toString(),
+      biddingType: BiddingType.values.firstWhere(
+        (e) => e.name == data['biddingType'],
+        orElse: () => BiddingType.fixedPrice,
+      ),
+      auctionId: data['auctionId']?.toString(),
+      auctionEndTime: data['auctionEndTime'] is Timestamp
+          ? (data['auctionEndTime'] as Timestamp).toDate()
+          : null,
+      startingBid: (data['startingBid'] as num?)?.toDouble(),
+      reservePrice: (data['reservePrice'] as num?)?.toDouble(),
+      cropType: data['cropType'] != null
+          ? CropType.values.firstWhere(
+              (e) => e.name == data['cropType'],
+              orElse: () => CropType.wheat,
+            )
+          : null,
+      category: data['category'] != null
+          ? CropCategory.values.firstWhere(
+              (e) => e.name == data['category'],
+              orElse: () => CropCategory.grains,
+            )
+          : null,
+      certifications: List<Map<String, dynamic>>.from(data['certifications'] ?? []),
+      qualityGrade: QualityGrade.values.firstWhere(
+        (e) => e.name == data['qualityGrade'],
+        orElse: () => QualityGrade.standard,
+      ),
+      createdAt: createdDt,
+      updatedAt: data['updatedAt'] is Timestamp
+          ? (data['updatedAt'] as Timestamp).toDate()
+          : null,
+      isActive: data['isActive'] ?? true,
+      signatureUrl: data['signatureUrl']?.toString(),
+      agriScore: (data['agriScore'] as num?)?.toDouble(),
+      riskTier: data['riskTier']?.toString(),
+      ndviValue: (data['ndviValue'] as num?)?.toDouble(),
+      soilType: data['soilType']?.toString(),
+      mlPredictions: data['mlPredictions'] as Map<String, dynamic>?,
+      fpoId: data['fpoId'] as String?,
+      fpoName: data['fpoName'] as String?,
+      sellingMethod: data['sellingMethod'] as String? ?? 'direct',
+      deliveryOption: data['deliveryOption'] as String? ?? 'platform',
+      logisticsProvider: data['logisticsProvider'] as String?,
+      dispatchLeadTimeDays: (data['dispatchLeadTimeDays'] as num?)?.toInt() ?? 2,
+      shippingNotes: data['shippingNotes'] as String?,
+      isPreHarvest: data['isPreHarvest'] as bool? ?? false,
+      daysToHarvest: (data['daysToHarvest'] as num?)?.toInt(),
+      estimatedHarvestDate: data['estimatedHarvestDate'] is Timestamp
+          ? (data['estimatedHarvestDate'] as Timestamp).toDate()
+          : null,
       cropGrowthStage: data['cropGrowthStage'] as String?,
       preBookingAdvancePct: (data['preBookingAdvancePct'] as num?)?.toDouble(),
     );

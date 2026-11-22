@@ -26,6 +26,8 @@ class FpoLotDetailsModal {
     String? imageCrop,
     String? fpoId,
     String? fpoName,
+    String? farmerName,
+    String sellingMethod = 'direct',
     String? inventoryItemId,
     bool isBuyer = false,
     bool isRetail = false,
@@ -61,6 +63,8 @@ class FpoLotDetailsModal {
               imageCrop: imageCrop,
               fpoId: fpoId,
               fpoName: fpoName,
+              farmerName: farmerName,
+              sellingMethod: sellingMethod,
               inventoryItemId: inventoryItemId,
               isBuyer: isBuyer,
               isRetail: isRetail,
@@ -90,6 +94,8 @@ class _FpoLotDetailsContent extends StatefulWidget {
   final String? imageCrop;
   final String? fpoId;
   final String? fpoName;
+  final String? farmerName;
+  final String sellingMethod;
   final String? inventoryItemId;
   final bool isBuyer;
   final bool isRetail;
@@ -111,6 +117,8 @@ class _FpoLotDetailsContent extends StatefulWidget {
     this.imageCrop,
     this.fpoId,
     this.fpoName,
+    this.farmerName,
+    this.sellingMethod = 'direct',
     this.inventoryItemId,
     this.isBuyer = false,
     this.isRetail = false,
@@ -382,7 +390,110 @@ class _FpoLotDetailsContentState extends State<_FpoLotDetailsContent> {
             ),
           ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 14),
+
+        // SELLING CHANNEL CARD: DIRECT FARMER vs THROUGH FPO
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: (widget.sellingMethod == 'fpo')
+                ? const Color(0xFFEFF6FF)
+                : const Color(0xFFF0FDF4),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: (widget.sellingMethod == 'fpo')
+                  ? const Color(0xFFBFDBFE)
+                  : const Color(0xFFBBF7D0),
+              width: 1.5,
+            ),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (widget.sellingMethod == 'fpo')
+                      ? const Color(0xFFDBEAFE)
+                      : const Color(0xFFDCFCE7),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  (widget.sellingMethod == 'fpo')
+                      ? Icons.apartment_rounded
+                      : Icons.person_pin_circle_rounded,
+                  size: 20,
+                  color: (widget.sellingMethod == 'fpo')
+                      ? const Color(0xFF1D4ED8)
+                      : const Color(0xFF15803D),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          (widget.sellingMethod == 'fpo')
+                              ? context.tr('Selling Through FPO', 'एफपीओ के माध्यम से बिक्री')
+                              : context.tr('Selling Directly (Farmer Direct)', 'सीधे बिक्री (किसान से प्रत्यक्ष)'),
+                          style: GoogleFonts.outfit(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.bold,
+                            color: (widget.sellingMethod == 'fpo')
+                                ? const Color(0xFF1E40AF)
+                                : const Color(0xFF166534),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: (widget.sellingMethod == 'fpo')
+                                ? const Color(0xFF2563EB)
+                                : const Color(0xFF16A34A),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            (widget.sellingMethod == 'fpo') ? 'FPO CONSIGNED' : 'ZERO BROKERAGE',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      (widget.sellingMethod == 'fpo')
+                          ? context.tr(
+                              'Farmer ${widget.farmerName?.isNotEmpty == true ? widget.farmerName! : ""} has listed this harvest through ${widget.fpoName ?? "Verified FPO"}. Produce is quality-assayed, aggregated, and dispatched from the FPO warehouse.',
+                              'किसान ने यह उपज ${widget.fpoName ?? "सत्यापित एफपीओ"} के माध्यम से सूचीबद्ध की है। यह एफपीओ गोदाम से गुणवत्ता परीक्षित और प्रेषित की जाती है।',
+                            )
+                          : context.tr(
+                              'Farmer ${widget.farmerName?.isNotEmpty == true ? widget.farmerName! : "Member"} is selling directly to buyers. Harvest is sourced directly at farm-gate with zero intermediary fee.',
+                              'किसान सीधे खरीदारों को बेच रहे हैं। शून्य बिचौलिया शुल्क के साथ सीधे खेत से माल उठाया जाता है।',
+                            ),
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        color: (widget.sellingMethod == 'fpo')
+                            ? const Color(0xFF1E3A8A)
+                            : const Color(0xFF14532D),
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
 
         // 5. ATOMIC INVENTORY MATH & RESERVATION BREAKDOWN
         Container(
