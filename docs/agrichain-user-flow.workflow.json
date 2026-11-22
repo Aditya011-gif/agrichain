@@ -1,0 +1,262 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "AgriChain: End-to-End User Flow & Protocol",
+    "subtitle": "Verified interactive system map of Farmer, Buyer, FPO, and Smart Contract Escrow",
+    "animation": "trace",
+    "visual_preset": "signal-flow",
+    "quality_profile": "showcase",
+    "output": "docs/agrichain-user-flow.html",
+    "views": [
+      {
+        "id": "farmer-flow",
+        "label": "Farmer Journey",
+        "focus": ["user_onboard", "farmer_assay", "market_catalog", "buyer_order", "escrow_deposit", "instant_payout"],
+        "note": "Follow the farmer from DigiLocker Aadhaar KYC and MobileNetV3 AI assaying to automated DBT bank deposit."
+      },
+      {
+        "id": "buyer-flow",
+        "label": "Buyer Flow",
+        "focus": ["user_onboard", "buyer_setup", "market_catalog", "buyer_order", "escrow_deposit", "factory_qc"],
+        "note": "Explore procurement via 7km cluster Fresh Shop, 9-Act contract generation, and factory gate inspection."
+      },
+      {
+        "id": "fpo-flow",
+        "label": "FPO Pooling",
+        "focus": ["farmer_assay", "fpo_pooling", "market_catalog", "buyer_order"],
+        "note": "Track multi-farmer lot aggregation via DBSCAN and marketplace catalog integration."
+      },
+      {
+        "id": "escrow-lifecycle",
+        "label": "Escrow & Payout",
+        "focus": ["buyer_order", "escrow_deposit", "freight_dispatch", "factory_qc", "instant_payout"],
+        "note": "Inspect non-custodial Polygon PoS escrow security, ULIP FASTag tracking, and instant automated payout."
+      }
+    ]
+  },
+  "lanes": [
+    { "id": "seller", "label": "Farmer & FPO Sellers" },
+    { "id": "market", "label": "AgriChain Marketplace & Engine" },
+    { "id": "buyer", "label": "Retail & Institutional Buyers" },
+    { "id": "settlement", "label": "Escrow & Fulfillment Protocol" }
+  ],
+  "phases": [
+    { "id": "phase_onboard", "label": "Intake & KYC", "fromCol": 0, "toCol": 1 },
+    { "id": "phase_trade", "label": "Assaying & Commerce", "fromCol": 2, "toCol": 3, "variant": "emphasis" },
+    { "id": "phase_fulfill", "label": "Escrow & Payout", "fromCol": 4, "toCol": 5, "variant": "dashed" }
+  ],
+  "groups": [
+    { "id": "group_intake", "label": "Verified Onboarding", "lane": "market", "fromCol": 0, "toCol": 1, "variant": "security" },
+    { "id": "group_settle", "label": "Escrow & Logistics", "lane": "settlement", "fromCol": 3, "toCol": 5, "variant": "emphasis" }
+  ],
+  "mainPath": [
+    "user_onboard",
+    "farmer_assay",
+    "market_catalog",
+    "buyer_order",
+    "escrow_deposit",
+    "freight_dispatch",
+    "factory_qc",
+    "instant_payout"
+  ],
+  "nodes": [
+    {
+      "id": "user_onboard",
+      "lane": "market",
+      "col": 0,
+      "type": "security",
+      "label": "Universal Onboarding",
+      "sublabel": "OTP & DigiLocker KYC",
+      "tag": "1-Time Verification",
+      "width": 136
+    },
+    {
+      "id": "farmer_assay",
+      "lane": "seller",
+      "col": 1,
+      "type": "frontend",
+      "label": "Farmer AI Assaying",
+      "sublabel": "MobileNetV3 CV Quality",
+      "tag": "Crop NFT Mint",
+      "width": 136
+    },
+    {
+      "id": "buyer_setup",
+      "lane": "buyer",
+      "col": 1,
+      "type": "frontend",
+      "label": "Buyer Discovery",
+      "sublabel": "7km Cluster & Shop",
+      "tag": "Demand Aggregation",
+      "width": 136
+    },
+    {
+      "id": "fpo_pooling",
+      "lane": "seller",
+      "col": 2,
+      "type": "backend",
+      "label": "FPO Aggregator",
+      "sublabel": "DBSCAN Lot Pooling",
+      "tag": "Bulk Volume",
+      "width": 136
+    },
+    {
+      "id": "market_catalog",
+      "lane": "market",
+      "col": 2,
+      "type": "backend",
+      "label": "Verified Catalog",
+      "sublabel": "Fair Farmgate MSP",
+      "tag": "Dynamic Matching",
+      "width": 136
+    },
+    {
+      "id": "buyer_order",
+      "lane": "buyer",
+      "col": 3,
+      "type": "frontend",
+      "label": "Order & Contract",
+      "sublabel": "9-Act E-Contract PDF",
+      "tag": "Committed Terms",
+      "width": 136
+    },
+    {
+      "id": "escrow_deposit",
+      "lane": "settlement",
+      "col": 3,
+      "type": "database",
+      "label": "Smart Escrow Lock",
+      "sublabel": "AgriChainCompliance.sol",
+      "tag": "Non-Custodial Hold",
+      "width": 136
+    },
+    {
+      "id": "freight_dispatch",
+      "lane": "settlement",
+      "col": 4,
+      "type": "cloud",
+      "label": "7-Carrier Freight",
+      "sublabel": "ULIP FASTag Telematics",
+      "tag": "Real-Time Tracking",
+      "width": 136
+    },
+    {
+      "id": "factory_qc",
+      "lane": "buyer",
+      "col": 5,
+      "type": "security",
+      "label": "Factory-Gate QC",
+      "sublabel": "24hr Moisture/Grading",
+      "tag": "Delivery Acceptance",
+      "width": 136
+    },
+    {
+      "id": "instant_payout",
+      "lane": "settlement",
+      "col": 5,
+      "type": "backend",
+      "label": "Instant DBT Payout",
+      "sublabel": "Automated Multi-Split",
+      "tag": "Direct Passbook Credit",
+      "width": 136
+    }
+  ],
+  "edges": [
+    {
+      "id": "onboard-farmer",
+      "from": "user_onboard",
+      "to": "farmer_assay",
+      "label": "farmer",
+      "variant": "emphasis"
+    },
+    {
+      "id": "onboard-buyer",
+      "from": "user_onboard",
+      "to": "buyer_setup",
+      "label": "buyer",
+      "variant": "default"
+    },
+    {
+      "id": "assay-pool",
+      "from": "farmer_assay",
+      "to": "fpo_pooling",
+      "label": "pool lots",
+      "variant": "dashed"
+    },
+    {
+      "id": "assay-catalog",
+      "from": "farmer_assay",
+      "to": "market_catalog",
+      "label": "direct listing",
+      "variant": "emphasis"
+    },
+    {
+      "id": "pool-catalog",
+      "from": "fpo_pooling",
+      "to": "market_catalog",
+      "label": "bulk batch",
+      "variant": "dashed"
+    },
+    {
+      "id": "buyer-order-step",
+      "from": "buyer_setup",
+      "to": "buyer_order",
+      "label": "checkout",
+      "variant": "default"
+    },
+    {
+      "id": "catalog-order",
+      "from": "market_catalog",
+      "to": "buyer_order",
+      "label": "match order",
+      "variant": "emphasis"
+    },
+    {
+      "id": "order-escrow",
+      "from": "buyer_order",
+      "to": "escrow_deposit",
+      "label": "fund escrow",
+      "variant": "emphasis"
+    },
+    {
+      "id": "escrow-freight",
+      "from": "escrow_deposit",
+      "to": "freight_dispatch",
+      "label": "dispatch",
+      "variant": "emphasis"
+    },
+    {
+      "id": "freight-qc",
+      "from": "freight_dispatch",
+      "to": "factory_qc",
+      "label": "gate arrival",
+      "variant": "emphasis"
+    },
+    {
+      "id": "qc-payout",
+      "from": "factory_qc",
+      "to": "instant_payout",
+      "label": "qc approved",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "AI Quality & Spatial Pooling",
+      "items": [
+        "On-device MobileNetV3 assays grain moisture, foreign matter, and broken grain percentage",
+        "DBSCAN clustering aggregates smallholder farm lots into bulk freight truckloads"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Trust & Escrow Protocol",
+      "items": [
+        "Polygon PoS smart contract locks funds until 24-hr factory gate QC acceptance",
+        "Multi-split payout transfers direct DBT payments to farmer accounts with zero middlemen"
+      ]
+    }
+  ]
+}
